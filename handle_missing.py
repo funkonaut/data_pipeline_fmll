@@ -17,7 +17,7 @@ df_tcad.land_use = df_tcad.groupby(['st_name','st_number']).land_use.transform('
 #df_miss['state']='TX'
 #df_miss.to_csv('./bulk_all.csv',columns=['address','city','state','zip'])
 #exec(open('geocode.py').read()) #MAKE SURE LOWER LINE I IN GEOCODE DIR MAKE SURE GEOCODE DIR IS EMPTY BEFORE DOING THIS!!!!
-df_fill = pd.read_csv('./combined_results.csv')
+df_fill = pd.read_csv('../find-my-landlord-atx-2/combined_results.csv')
 del df_fill['Unnamed: 0']
 df_fill = df_fill.merge(pd.DataFrame(df_fill.Loc.str.split(',',expand=True)),left_index=True,right_index=True)
 df_fill.Addres_m.fillna(df_fill.Address,inplace=True)
@@ -43,12 +43,27 @@ df_tcad.units_x = np.where((df_tcad.value>10000000)&(df_tcad.units_x<5),np.nan,d
 #Write known column where units are correct or rather better estimates 
 df_tcad['known'] = np.where(df_tcad.units_x.notnull(),True,False)
 
+#reset unit count back to known
+#df_tcad['units_x'] = np.where(df_tcad.known,df_tcad.units_x,np.nan)
+#del df_tcad['avg_unit_cost_zip']
+#del df_tcad['avg_unit_cost']
+
+#calculate missing units for res
+res_type = ['DORMITORY HIRISE', 'DORMITORY','APARTMENT   5-25','LUXURY HI-RISE APTS 100+', 'APARTMENT 100+']
+df_tcad['res'] = (df_tcad.res | df_tcad.type1.isin(res_type))
+df_res = df_tcad.loc[df_tcad.res]
+
+#this takes around 5 min
+train = df_res[['units_x','value','zip']]
+df_impute = mice(train.values)
+df_impute = pd.DataFrame(df_impute, columns = ['units_x','value','zip'])
+df_res.reset_index(inplace=True)
+df_res.units_x.fillna(df_impute.units_x,inplace=True)
+
 #ESTIMATE THE REST
-#Anything under 100k is assumed 1 unit
-df_tcad.units_x = np.where((df_tcad.value<100000)&(df_tcad.units_x.isnull()),1,df_tcad.units_x)
-#Take high end of ranges in improvement type data
-df_tcad.units_x.fillna(df_tcad.high,inplace=True)
-df_tcad.units_x.fillna(df_tcad.low,inplace=True) 
+#Anything under 10m is assumed 1 unit
+df_tcad.units_x = np.where((df_tcad.value<10000000)&(df_tcad.units_x.isnull()),1,df_tcad.units_x)
+df_tcad['est'] = np.where(df_tcad.units_x.isnull(),True,False)
 
 #calculate avg unit cost for known residential units 
 ##will I get a more accurate answer if I look at 2016 unit cost? or just assume 2016 numbers are mostly consitent?
@@ -56,12 +71,12 @@ df_known = df_tcad.loc[df_tcad.known]
 ##get each props unit cost
 df_known['unit_cost'] = df_known.value/df_known.units_x
 ##group by to calculate average cost per prop type in a sub_div
-df_known['avg_unit_cost'] = df_known.groupby(['sub_div','type1'])['unit_cost'].transform('mean')
+df_known['avg_unit_cost'] = df_known.groupby(['sub_div'])['unit_cost'].transform('mean')
 df_known['avg_unit_cost_zip'] = df_known.groupby(['zip'])['unit_cost'].transform('mean')
 clean_up(df_known,['prop_id','avg_unit_cost','avg_unit_cost_zip'])
 df_tcad = df_tcad.merge(df_known,on='prop_id',how='left').drop_duplicates('prop_id')
-df_tcad.avg_unit_cost = df_tcad.groupby(['sub_div','land_use'])['avg_unit_cost'].transform('ffill')
-df_tcad.avg_unit_cost = df_tcad.groupby(['sub_div','land_use'])['avg_unit_cost'].transform('bfill')
+df_tcad.avg_unit_cost = df_tcad.groupby(['sub_div'])['avg_unit_cost'].transform('ffill')
+df_tcad.avg_unit_cost = df_tcad.groupby(['sub_div'])['avg_unit_cost'].transform('bfill')
 df_tcad.avg_unit_cost_zip = df_tcad.groupby(['zip'])['avg_unit_cost_zip'].transform('ffill')
 df_tcad.avg_unit_cost_zip = df_tcad.groupby(['zip'])['avg_unit_cost_zip'].transform('bfill')
 df_tcad.units_x.fillna(round(df_tcad.value/df_tcad.avg_unit_cost),inplace=True)

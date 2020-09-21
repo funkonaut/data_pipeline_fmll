@@ -2,8 +2,6 @@
 #############       FIND THE LAND LORDS         ###############
 ###############################################################
 #Residential props
-res_type = ['DORMITORY HIRISE', 'DORMITORY','APARTMENT   5-25','LUXURY HI-RISE APTS 100+', 'APARTMENT 100+']
-df_tcad['res'] = (df_tcad.res | df_tcad.type1.isin(res_type))
 df_res = df_tcad.loc[df_tcad.res]
 df_res.address.fillna('MISSING ADDRESS',inplace=True) #change to 0 for fuzz match
 df_res.owner_add.fillna('NO ADDRESS FOUND',inplace=True) #change to 0 for fuzz match

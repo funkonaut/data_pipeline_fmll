@@ -32,6 +32,7 @@ from shapely import wkt
 from fuzzywuzzy import fuzz
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
+from impyute.imputation.cs import mice
 
 def clean_up(df,cols=[] ,delete=False):
     if delete:
