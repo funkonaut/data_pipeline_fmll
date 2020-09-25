@@ -33,6 +33,7 @@ df_units.drop_duplicates('prop_id',inplace=True)
 extract_new_props(df_tcad,'deed')
 
 #Residential properties not including O1 properties as they are not currently leased
+#C1?
 res = ['A1','A2','A3','A4','A5','B1','B2','B3','B4']
 df_tcad['res'] = df_tcad.code.isin(res)|df_tcad.code2.isin(res)|df_tcad.code3.isin(res)
 
