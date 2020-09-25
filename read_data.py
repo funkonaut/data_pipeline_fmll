@@ -28,5 +28,10 @@ gdfdist = geopandas.read_file('../data_laundry/districts/geo_export_74417697-1c4
 df_locs = pd.read_csv('../data_laundry/R000258-082120.csv')
 df_locs.columns = ['PID_10','prop_id','X','Y']
 
+#Todo incorporate Construction permits
+df_con = pd.read_csv('../data_laundry/Issued_Construction_Permits.csv')
+
+#Eviciton Data
+df_evict = pd.read_csv('../data_laundry/eviction_data_9_24.csv')
 #Social Vulnerability score
 gdf_sv = geopandas.read_file('../data_laundry/A2SI_SVI/A2SI_SVI.shp')
